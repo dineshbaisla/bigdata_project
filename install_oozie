@@ -1,0 +1,38 @@
+cd ~/install/oozie_updated/
+
+oozieruncheck=`jps | grep Bootstrap | wc -l`
+if [ $oozieruncheck -eq 0 ]
+then
+echo "Installing and starting Oozie"
+unzip -o oozie.zip
+echo -e "hduser" | sudo -S rm -r /usr/local/oozie
+echo -e "hduser" | sudo -S mv oozie /usr/local/
+echo 'export PATH=$PATH:/usr/local/oozie/bin ' >> ~/.bashrc
+source ~/.bashrc
+stop-yarn.sh
+cp /home/hduser/install/oozieusecases/core-site.xml /usr/local/hadoop/etc/hadoop/core-site.xml
+cp /home/hduser/install/oozieusecases/yarn-site.xml /usr/local/hadoop/etc/hadoop/yarn-site.xml
+cp /home/hduser/install/oozieusecases/capacity-scheduler.xml /usr/local/hadoop/etc/hadoop/capacity-scheduler.xml
+start-yarn.sh
+jobhistory=`jps | grep JobHistoryServer | wc -l`
+if [ $jobhistory -eq 0 ]
+then
+mr-jobhistory-daemon.sh start historyserver
+fi
+chmod 777 -R /usr/local/oozie
+cp /home/hduser/install/oozie_updated/oozie-sharelib-4.3.0.tar.gz /usr/local/oozie
+
+oozie-setup.sh sharelib create -fs hdfs://localhost:54310
+
+hadoop fs -mkdir -p /user/hduser/share/lib/sqoop
+hadoop fs -put -f /usr/local/sqoop/lib/*.jar share/lib/sqoop/
+hadoop fs -put -f /usr/local/sqoop/mysql-connector-java.jar share/lib
+
+hadoop fs -mkdir -p /user/hduser/share/lib/hive
+hadoop fs -put -f /usr/local/hive/lib/*.jar share/lib/hive/
+
+hadoop fs -mkdir -p /user/hduser/oozie/
+tar xvzf /home/hduser/install/oozie_updated/oozieusecases.tar.gz
+hadoop fs -put -f /home/hduser/install/oozie_updated/oozieusecases/* /user/hduser/oozie
+oozied.sh start
+fi
