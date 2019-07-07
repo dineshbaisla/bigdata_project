@@ -1,3 +1,5 @@
+//automated script
+
 cd ~/install/oozie_updated/
 
 oozieruncheck=`jps | grep Bootstrap | wc -l`
